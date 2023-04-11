@@ -3,15 +3,11 @@
 
 
 def top_students(mongo_collection):
-    """Returns all students sorted by average score"""
-    pipeline = [
-        {"$unwind": "$scores"},
-        {"$group": {
-            "_id": "$_id",
-            "name": {"$first": "$name"},
-            "averageScore": {"$avg": "$scores.score"}
+    """returns all students sorted by average score"""
+    return mongo_collection.aggregate([
+        {"$project": {
+            "name": "$name",
+            "averageScore": {"$avg": "$topics.score"}
         }},
         {"$sort": {"averageScore": -1}}
-    ]
-    cursor = mongo_collection.aggregate(pipeline)
-    return [document for document in cursor]
+    ])
