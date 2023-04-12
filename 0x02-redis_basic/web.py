@@ -1,45 +1,32 @@
 #!/usr/bin/env python3
 """Display implement a get_page function"""
-import requests
 import redis
-import time
+import requests
+from typing import Callable
+from functools import wraps
+
+redis = redis.Redis()
 
 
-class Cache:
-    def __init__(self):
-        """Display cache"""
-        self._redis = redis.Redis()
-        self._redis.flushdb()
+def wrap_requests(fn: Callable) -> Callable:
+    """Define wrapper"""
 
-    def count_calls(self, func):
-        def wrapper(*args, **kwargs):
-            key = f"count:{args[0]}"
-            self._redis.incr(key)
-            return func(*args, **kwargs)
-        return wrapper
+    @wraps(fn)
+    def wrapper(url):
+        """Wrapper"""
+        redis.incr(f"count:{url}")
+        cached_response = redis.get(f"cached:{url}")
+        if cached_response:
+            return cached_response.decode('utf-8')
+        result = fn(url)
+        redis.setex(f"cached:{url}", 10, result)
+        return result
 
-    def cache(self, ttl):
-        def decorator(func):
-            @wraps(func)
-            def wrapper(*args, **kwargs):
-                key = f"cache:{args[0]}"
-                if self._redis.exists(key):
-                    return self._redis.get(key)
-                else:
-                    result = func(*args, **kwargs)
-                    self._redis.setex(key, ttl, result)
-                    return result
-            return wrapper
-        return decorator
+    return wrapper
 
 
-class Web:
-    def __init__(self):
-        self.cache = Cache()
-
-    @self.cache.count_calls
-    @self.cache.cache(ttl=10)
-    def get_page(self, url):
-        response = requests.get(url)
-        time.sleep(3)
-        return response.content.decode()
+@wrap_requests
+def get_page(url: str) -> str:
+    """get"""
+    response = requests.get(url)
+    return response.text
