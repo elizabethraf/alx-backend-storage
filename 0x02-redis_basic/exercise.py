@@ -32,12 +32,6 @@ class Cache:
     def get_int(self, key: str) -> Union[int, None]:
         return self.get(key, lambda x: int(x) if x is not None else x)
 
-
-class Cache:
-    def __init__(self):
-        self._redis = redis.Redis()
-        self._redis.flushdb()
-
     def count_calls(self, func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
