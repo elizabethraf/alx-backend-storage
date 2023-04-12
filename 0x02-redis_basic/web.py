@@ -28,5 +28,5 @@ def wrap_requests(fn: Callable) -> Callable:
 @wrap_requests
 def get_page(url: str) -> str:
     """get"""
-    response = requests.get(url)
+    req = requests.get(url)
     return response.text
